@@ -1,0 +1,80 @@
+package node;
+
+public class LinkedList {
+    Node head;
+
+    LinkedList() {
+
+    }
+
+    public void insert(int data) {
+        Node node = new Node();
+        node.data = data;
+        node.next = null;
+        if(head == null) {
+            head = node;
+        }else {
+            Node n = head;
+            while(n.next != null) {
+                n = n.next;
+            }
+            n.next = node;
+        }
+    }
+
+    public void insertAtStart(int data) {
+        Node node = new Node();
+        node.data = data;
+        node.next = head;
+        head = node; //update as head
+    }
+
+    public void insertAt(int idx, int data) {
+        Node node = new Node();
+        node.data = data;
+        node.next = null;
+        int step = 0;
+        Node n = head;
+        if(idx == 0) {
+            insertAtStart(data);
+            return;
+        }
+        for(int i = 0; i < idx-1; i++) {
+            n = n.next;
+        }
+        //insert
+        //Node temp = n.next;
+        //n.next = node;
+        //node.next = temp;
+        node.next = n.next;
+        n.next = node;
+
+    }
+
+    public void deleteAt(int idx) {
+        if(idx == 0) {
+            head = head.next;
+        }
+        else {
+            Node n = head;
+            Node n1 = null;
+            for(int i = 0; i < idx - 1; i++) {
+                n = n.next;
+            }
+            n1 = n.next; //n1 is the delete target
+            n.next = n1.next; // we use n1.next to remove n1 Node
+            n1 = null; // Garbage Collection
+        }
+
+
+    }
+
+    public void show() {
+        Node node = head;
+        while (node.next != null) {
+            System.out.println(node.data);
+            node = node.next;
+        }
+        System.out.println(node.data);
+    }
+}
