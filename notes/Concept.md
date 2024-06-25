@@ -307,4 +307,196 @@ Test.java in order to work.
 #### Abstract = Type perform Operation
 Concept associated with Operation with Data => Abstract Data Type
 
-####
+#### JDBC (Java Database Connectivity)
+DDL (Structure)
+DML (Manipulation) // modification, so use executeUpdate (return int, return 4 mean 4 row affected)
+DQL (Data Query Language) //fetching data, use executeQuery (return ResultSet)
+TCL (Transaction Control Language)
+
+#### DAO (Data Access Object) [Design Pattern]
+Achieve Data fetching from a DAO class, which the DAO perform fetching or modification
+#### Static Block & Instance Block
+Class.forName() loading the class, so only trigger static block
+abc a = new abc(); // it load static block and instance block together
+```
+class abc {
+    static {
+        
+    }
+    
+    {
+        System.out.println("Hello");
+    }
+}
+```
+
+#### Regular Expression (Regex)
+Output simply match the number of match
+```
+. (just one instance of any character) eg Tom, Tam, Tim => T.m
++ (repeat 1 time above) eg Toom => To+m
+* (repeat 0 time above) eg Tom, Tm => To*m => it true even o is not exist 
+? (repeat 0 or 1 time)  eg Tom => T?m => True if T only have 1, or no T
+\d (any 0~9) eg 123 => \d => output: 3, because 3 matching
+\d+ eg 123,123,456 => output:2 , find longest match any no repeat (so 123 count only 1 time)
+ 
+\w (any alphabet in 1 character) eg a~z, A~Z, 0-9 , eg \w+ will imply the longest character until space eg (cat is cute) => output (cat, is, cute)
+{} (repeat any time) 
+    for example, a => a , get all with a match , aaa => aa => it will exclute last a so output :(aa) 
+    with {} , aaa => a{2} => ouput:(aa) , exactly same as above
+    a{2,3} meaning match a with 2 or 3 time match  , eg aaaa,aa => a{2,3} => output aaa, aa
+    a{2,} meaning a with 2 to unlimited match
+    eg aaaa => a{2,} => output: aaaa
+() priority calculate 
+| OR eg ab,bc => ab => output: ab (1 output), with OR , ab,bc => ab|bc => ab,bc (2 output)
+     eg ab, abc, bcc => (ab|bc)c => output: abc, bcc (2 output), because we first find ab or bc, then it match with c
+[] match any character eg abcd => [aed] imply a or e or d=> a,d (2 match) 
+    [a-c] mean a to c
+[^] exclude , eg [^abc] any character exclude abc
+\ literal imply the exactly meaning 
+    eg $5.99 => $5.99 => cant match because the (.) and ($) imply instace of $ , THEREFORE , $5.99 => \$5\.99
+
+^ start of the line
+$ end of the line
+Example:
+Hello World Hello
+Hello Hello
+Hello World
+Pattern: ^Hello , () imply output, only start of the line match
+(Hello) World Hello
+(Hello) Hello
+(Hello) World
+Pattern: Hello$ , end with Hello
+Hello World (Hello)
+Hello (Hello)
+Hello World
+Example 2 , H.*d$ , it starts with H and repeat any character, BUT END OF LINE
+Hello World Hello
+Hello Hello
+(Hello World)
+(Hello Worldd)
+only last (Hello World) is matched, because the (d$) expression, (Hello World Hello) is not end with (d)
+
+\b word boundary (start or end with boundary) 
+Example (start boundary):
+Jan
+Jane
+Janet
+Jannne
+123Jane
+Pattern: \bJan
+(Jan)
+(Jan)e
+(Jan)et
+(Jan)nne
+123Jane (not match because its not start with Jan in every word)
+Example (start and end boundary):
+Pattern: \bJan\b
+(Jan) is the only output, because it arround with space (start and endboundary)
+
+
+() Not only priority but also Capturing Group , Save the Match item and use it alter
+Example:
+The dog is big.
+The dog is fat.
+The cat is thin.
+Wow, The cat is cute.
+Pattern: The \w+ is \w+\.
+(The dog is big.)
+(The dog is fat.)
+(The cat is thin.)
+Wow, (The cat is cute.)
+
+Pattern: (The \w+ is \w+\.) , the output is captured and can use later
+Example:
+In VS Code, Ctrl F and open Regex ($1, $2 will be the capture group result)
+Search: (The \w+ is) (\w+\.) , we now have 2 capture group , $1 and $2 can be repeatedly use
+Replace: $1 tiny.
+Result:
+The dog is tiny.
+The dog is tiny.
+The cat is tiny.
+Wow, The cat is tiny. // Wow will not disappear
+
+(?:) Not use Capture Group eg (?:big|fat|thin) , it will consider () as priority only but not capture group
+```
+
+#### Regex Pratice
+##### EX1 (find number)
+Call us at (555) 123-4567 or (123) 986-6543 , 
+Answer : \(\d{3}\) \d{3}-\d{4}
+##### EX2 (find email) (the email dont have special symbol except @ and .) 
+[a-zA-z0-9.]+@[a-zA-z0-9]+(?:\.[a-zA-Z0-9]+){1,} (only . and @ allow) so first 3 row is searchable but not last one
+Contact us at abc@example.com.hk or admin@domain.org..
+James.ku@gmail.com
+james.ku@abc.org
+Jake-kk@gmail.com
+abc@not123.com
+
+(the email  have special symbol for - and .)  Step:
+allow specifal symbol (but 1 @ only )
+[\w.-]+  (it allow ONE character with any alphabet AND '-' , repeat ONE or above time)
+(abc)@(not123.com)
+
+Answer: [\w.-]+@[\w.]+\.[a-zA-Z]{2,63}  
+why {2,63} because the top domain (com, org ,hk) is at most 63, and [a-zA-Z] prevent . symbol eg(admin@domain.org..)
+
+##### EX3 (change date format from YYYY-MM-DD to MM-DD-YYYY)
+2024-06-08
+2024-12-25
+2024-01-01
+to
+06/08/2024
+12/25/2024
+01/01/2024
+answer : (\d{4})-(\d{2})-(\d{2})  , replace: $2/$3/$1
+
+How java perform Regex 
+case 1:(true,false) by find() , print it to get pattern, region and last match
+case 2: matches() and group() for capture group
+without capture group () in Pattern, it will only have toString result
+```
+java.util.regex.Matcher[pattern=[\\w]3Schools region=0,16 lastmatch=W3Schools]
+```
+
+```
+// Case 1:
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class Main {
+  public static void main(String[] args) {
+    Pattern pattern = Pattern.compile("w3schools", Pattern.CASE_INSENSITIVE);
+    Matcher matcher = pattern.matcher("Visit W3Schools!");
+    boolean matchFound = matcher.find();
+    if(matchFound) {
+      System.out.println("Match found");
+    } else {
+      System.out.println("Match not found");
+    }
+  }
+}
+// output: java.util.regex.Matcher[pattern=[\w]3Schools region=0,27 lastmatch=W3Schools]
+//          Match found
+ 
+// Case 2:
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public class Main {
+  public static void main(String[] args) throws Exception {
+    Pattern p = Pattern.compile("(\\d{1,3}).(\\d{1,3}).(\\d{1,3}).(\\d{1,3})"); 
+    Matcher m = p.matcher("127.0.0.1"); 
+    if (m.matches()) {   
+      System.out.println(m.group(0)); //entire group (127.0.0.1)
+      System.out.println(m.group(1));  //127
+      System.out.println(m.group(2));  //0
+      System.out.println(m.group(1));  //0
+      System.out.println(m.group(2));  //1
+    }
+  }
+}
+
+
+
+```
