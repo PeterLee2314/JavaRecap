@@ -500,3 +500,89 @@ public class Main {
 
 
 ```
+
+#### Mock Repository (Rest API)
+Need to have all method included in AlienRepository and connect to database (by JDBC or ORM tool[Hibernate])
+How to send data? For RestAPI, we need client application , eg mobile application become client like angularJs
+But we dont have, so we need add-on tool eg PostMan
+send Post Request on PostMan, set the Header with Content-Type = application/json first
+Then put the data in Body
+
+
+#### PathParam
+```
+use ...\...\101 is better than ...\...\alien?id=101
+use {} curly bracket as parameter on Path , add PathParam on the variable 
+@GET
+@Path("alien/{id}")
+@Produces(MediaType.APPLICATION_JSON)
+//@Produces(MediaType.APPLICATION_XML) not work
+public Alien getAlien(@PathParam("id") int id) {
+System.out.println("getAlien called");
+//JDBC or Hibernate to fetch data
+return repo.getAlien(id);
+}
+Accept both XML and JSON , both work for get and post(even allow XML data to JSON format)
+@Produces({MediaType.APPLICATION_JSON,MediaType.APPLICATION_XML})
+add header(Accept=application/xml)
+```
+
+#### Solution about XML and JSON (Jersey)
+add jaxb-impl,jakarta.xml.bind-api,jersey-media-jaxb to have XML
+@Consume, only accept XML format from client
+@Produce , produce XML or JSOn format to client, according to clien's accept format
+
+#### Dao VS Repository
+DAO is an abstraction of data persistence.
+Repository is an abstraction of a collection of objects.
+
+DAO: The pattern doesn't restrict you to store data of the same type, thus you can easily have a DAO that locates/stores related objects.
+Repository: Usually it will ONLY handle one type of objects. E.g. AppleRepository would allow you to do AppleRepository.findAll(criteria) or AppleRepository.save(juicyApple)
+
+DAO would be considered closer to the database, often table-centric.
+Repository would be considered closer to the Domain, dealing only in Aggregate Roots.
+
+Repository could be implemented using DAO's, but you wouldn't do the opposite.
+
+Also, a Repository is generally a narrower interface. It should be simply a collection of objects, with a Get(id), Find(ISpecification), Add(Entity).
+
+A method like Update is appropriate on a DAO, but not a Repository - when using a Repository, changes to entities would usually be tracked by separate UnitOfWork.
+
+It does seem common to see implementations called a Repository that is really more of a DAO, and hence I think there is some confusion about the difference between them.
+
+#### RestAPI (Spring)
+Jackson responsible for convert Object to Json, (similar as Jersey)
+@RestController, for AlienResource(Controller)
+@RequestMapping("path","GET") OR @GetMapping("path"), for GET 
+
+#### JPA => ORM => eg (Hibernate, Spring Boot JPA, EBean) 
+Better than JDBC,
+in Spring Boot JPA, we need XML Binding API for @XmlRootElement, and spring boot JPA for JPA
+
+#### CrudRepository VS JpaRepository
+JpaRepository extends PagingAndSortingRepository which in turn extends CrudRepository.
+CrudRepository mainly provides CRUD functions.
+PagingAndSortingRepository provides methods to do pagination and sorting records.
+JpaRepository provides some JPA-related methods such as flushing the persistence context and deleting records in a batch.
+Because of the inheritance mentioned above, JpaRepository will have all the functions of CrudRepository and PagingAndSortingRepository. 
+So if you don't need the repository to have the functions provided by JpaRepository and PagingAndSortingRepository , use CrudRepository.
+
+#### Spring Focus On POJO(Plain Old Java Object)
+Spring => Collection of module (for JPA, REST, Security, Web, Dependency Injection ,etc)
+Spring Core, Spring MVC, Spring Rest 
+@Autowired for connect instance of Repository on other class
+Spring Boot believes Convention Over Configuration, give you all basic configuration
+
+#### Spring Core => Dependency Injection => (Spring Context) 
+get Context by "import org.springframework.context.ApplicationContext"
+getBean() for create new class without using new keyword
+ApplicationContext context = SpringApplication.run(SpringbootrestApplication.class, args);
+eg Alien obj = context.getBean(Alien.class);
+@Component, on the Alien class, so Spring will know it his responsibility to create an object of alien
+
+
+
+
+
+
+

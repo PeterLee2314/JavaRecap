@@ -79,3 +79,60 @@ SELECT
     SUM(IF(state = 'approved', amount, 0)) AS approved_total_amount 
 from Transactions group by month,country; 
 ~~~~
+#### 1174
+~~~~sql
+#SLOW (because of JOIN)
+SELECT
+ROUND(SUM(IF(d2.first_order = d1.customer_pref_delivery_date, 1,0))*100/COUNT(DISTINCT d1.customer_id),2)
+AS immediate_percentage FROM Delivery d1
+INNER JOIN
+(SELECT 
+    MIN(order_date) AS first_order, customer_id
+    FROM Delivery GROUP BY customer_id
+ ) as d2 ON d1.customer_id = d2.customer_id 
+ ;
+ 
+#FAST (JUST 2 SELECT)
+SELECT ROUND(AVG(order_date = customer_pref_delivery_date)*100,2) AS immediate_percentage FROM Delivery
+WHERE (customer_id,order_date) IN
+(
+SELECT customer_id, MIN(order_date) FROM Delivery group by customer_id
+); 
+~~~~
+
+#### 550
+~~~~sql
+# WRONG (because there would be case that 09/10 (first time), 9/13 (second time) and 9/14(third time), but you calculate it
+# should only work when consecutive is first time and second time
+/*
+SELECT ROUND(COUNT(*)/(SELECT COUNT(DISTINCT player_id) from Activity),2) AS fraction from Activity a1 WHERE 
+EXISTS (SELECT * FROM Activity a2 WHERE a1.event_date = DATE_SUB(a2.event_date, INTERVAL 1 DAY) AND a1.player_id = a2.player_id)
+
+select ROUND((count(*)/(select count(distinct player_id) from activity)),2) as fraction
+from activity a1 join activity a2
+on a1.player_id = a2.player_id
+and datediff(a1.event_date,a2.event_date) = 1
+*/
+
+#Correct
+SELECT ROUND(COUNT(*)/(SELECT COUNT(DISTINCT player_id) FROM Activity),2) AS fraction FROM Activity
+WHERE (player_id, DATE_SUB(event_date, INTERVAL 1 DAY)) # assume the date is second time and -1 , it should match first time when consecutive 
+    IN (
+        SELECT player_id, MIN(event_date) FROM Activity Group By player_id #Get the Min date so it must be the first time
+    )
+
+~~~~
+
+#### 596
+~~~~sql
+SELECT class FROM Courses GROUP BY class HAVING COUNT(student) >= 5 ; 
+// we only use Having with aggregate function after GROUP BY
+~~~~
+
+#### 619
+~~~~sql 
+SELECT MAX(num) as num From
+(
+SELECT num from MyNumbers Group By num Having count(num) = 1
+) AS unique_number;
+~~~~

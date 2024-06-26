@@ -95,3 +95,26 @@ eg COUNT(0) is 6, COUNT(1) is 6 (as there is 6 row on the table), so COUNT accep
 DATE_FORMAT(date, '%Y') // if date is 2018/06/04 => output: 2018 
 YEAR(date) // get 2018
 EXTRACT( YEAR_MONTH FROM `date` ) 
+
+#### JOIN 
+Case 1 JOIN Table ON X.id = X2.id
+Case 2 JOIN (SELECT ....) AS X2  
+SELECT t1.*
+FROM employees t1
+INNER JOIN (
+SELECT id, min(salary) AS salary FROM employees GROUP BY id
+) t2 ON t1.id = t2.id AND t1.salary = t2.salary;
+You must SELECT id in the second query in order to compare it with ON
+
+#### WHERE , IN  
+WHERE + IN can use for filter match column
+WHERE (order_date, customer_id) IN
+(
+SELECT customer_id, MIN(order_date) FROM Delivery group by customer_id
+) // No output , order is matter (order_date,customer_id) != (customer_id, order_date)
+
+#### No group By but agg function
+SELECT customer_id, COUNT(*) FROM Delivery => output 1 row
+eg {"headers": ["customer_id", "COUNT(*)"], "values": [[1, 7]]}
+SELECT customer_id, COUNT(*) FROM Delivery GROUP BY customer_id => output many row accroding to number of customer_id
+eg {"headers": ["customer_id", "COUNT(*)"], "values": [[1, 2], [2, 2], [3, 2], [4, 1]]}
