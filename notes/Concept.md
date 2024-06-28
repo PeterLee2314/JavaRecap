@@ -974,3 +974,14 @@ Accept (how user want the received data format be) client < server
 Accept:application/xml
 Content-Type(how user send the data in which format to server) client -> server
 Content-Type:application/xml
+
+#### Delegation
+put main code inside service
+eg Product, ProductService
+
+#### MVC (Model)
+Model : data pass through all layers , eg a java class , student, teacher ,etc
+
+#### @Data
+@Entity (this is a model)
+@Data (auto generate Getter/Setter by lambok)
