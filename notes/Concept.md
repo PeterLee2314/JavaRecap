@@ -509,7 +509,7 @@ send Post Request on PostMan, set the Header with Content-Type = application/jso
 Then put the data in Body
 
 
-#### PathParam
+#### PathParam (Jersey or Spring Boot) 
 ```
 use ...\...\101 is better than ...\...\alien?id=101
 use {} curly bracket as parameter on Path , add PathParam on the variable 
@@ -580,9 +580,397 @@ ApplicationContext context = SpringApplication.run(SpringbootrestApplication.cla
 eg Alien obj = context.getBean(Alien.class);
 @Component, on the Alien class, so Spring will know it his responsibility to create an object of alien
 
+#### Dependency Injection (Spring vs Spring Boot)
+In Spring Boot just @Autowired and @Component
+In Spring we need xml
+ApplicationContext factory = new ClassPathXmlApplicationContext("spring.xml");
+Alien obj = factory.getBean(Alien.class);
+
+#### Spring Container
+Spring Container, all the object and process happen in JVM
+inside JVM, we have container, which container have spring bean
+What is Bean? any class with variable and getter,setter refers to Beans
+Spring will create Bean for you if you mentioned in "Spring.xml", even though you didnt use it
+
+Spring, with different object will have reference pointing to same object(Bean) (Singleton)
+eg obj1 and obj2 are the same if getBean
+
+#### Singleton Vs Prototype
+By default, Spring follows Singleton design pattern, so Spring Container give you 1 object
+attribute "scope=singleton" inside Bean tag by default
+change to "scaope=prototype" to have new object everytime call getBean of that class
+Even if you dont user it, Singleton will still create for you (Constructor triggered), as for Prototype it will not
+
+#### Setter Injection 
+property tag inside bean tag, every var is property inside bean 
+we dont need to call setter method, but place <property name="age" value="10"></property> inside that bean tag (Primitive)
+```
+<bean id="alien" class="com.peter.SpringCoreDemo.Alien">
+    <property name="age" value="10"></property>    
+</bean>
+```
+if setter is setAge123, the property name will be age123
+For Reference Type? use ref and define the reference bean
+```
+<bean id="alien" class="com.peter.SpringCoreDemo.Alien">
+<property name="age" value="10"></property>
+<property name="laptop" ref="laptop"></property>
+</bean>
+<bean id="laptop" class="com.peter.SpringCoreDemo.Laptop">
+</bean>
+```
+
+#### Constructor Injection
+if we have parameterized constructor
+Inside bean <constructor-arg value="12></constructor-arg>  , or use ref attribute if its reference type
+
+#### Spring Autowired
+We dont need to mention the <property ref...> inside bean by Autowired
+add attribute autowire="default" inside bean tag (default, byName, byType)
+byName: the class reference is "com" and it will look for bean name call "com"
+eg Computer com (inside Alien.java) , <bean id="comp" class="com.peter.SpringCoreDemo.Computer">
+byType: search by the depedent type (eg Computer object) could be confuse when Desktop and Laptop exist (solve by "primary="true"")
+
+#### Spring Boot JDBC
+DataSource (provide configuration and Connection pooling)
+Connection pooling: reuse connection
+JDBC Template, help you with DataSource and less code (provided in Spring Boot)
+spring.datasource (is different SQL JDBC)
+H2 (in-memory database) , direct take project run on your machine, for other (you need to download their workbench)
+
+#### Spring xml VS Sprint Boot Annotation
+simply, we ignore the tag and take the attribute as Annotation in Spring Boot 
+eg <bean ... attribute "scope=singleton" </bean>, in Spring Boot just simply @Scope("singleton") or @Scope("prototype")
+
+#### Spring Boot JDBC Template (H2) vs Spring Boot JPA(ORM)
+Spring Boot JPA is much easy to implement , eg Repository just implements CrudRepository or JpaRepository with its type and key (with the help of JPA)
+Spring Boot JDBC Template require JdbcTemplate and all method defined and also sql file inside Resources package (with the help of JdbcTemplate)
+Select Query => Execute Query
+Change something => ExecuteUpdate
+Basically in H2 database, we make table on xxx.sql file and add record on xxx2.sql
+
+#### Spring MVC
+MVC => Model View Controller
+Model (Class or aka Bean)
+View (encapsulated function for Model to extract data, eg addStudent, removeStudent)
+Controller (Accept Request)
+Dao (or aka Repository, connect to database)
+
+In the past, we use Servlet and JSP, simple Servlet seperate 3 task and handle everything (include response of data and layout)
+We want seperate thing with seperate task (someone who accept the request(Controller), someone will be viewed by the client(layout,V), someone hold data (C))
+Controller => send the response, accept the request
+View => Layout
+Model => Hold the data
+In the past, Servlet is Controller, JSP is View, Model is POJO(Simple Java Class)
+There come an issue when more than one controller (laptop, user, account, so many services) , SO we need more than 1 servlet
+1 servlet handle 1 request (Single Action Controller)
+So we want 1 Controller can handle multiple request, 2. we want something in front (Instead of sending request directly to the controller,
+we want a front controller (similar as ServletFilter))
+Solution: Spring MVC (create front controller for you:DispatcherServlet)
+Request -> DispatcherServlet -> UserController (We need file to configure when to call UserController by Dispatcher)
+In Spring its difficult, In Spring Boot its easier
+
+#### Spring MVC Application (more setup) vs Spring Boot MVC
+Controller == Servlet 
+View == JSP
+Model == Class
+To achieve Controller, make controller class , @Controller, @RequestMapping("/")
+DispatcherServlet call HomeController's method and call the actual page(by return string)
+To achieve JSP for Spring ,we need extension(Tomcat Jasper), with this extension we no longer download the JSP but get to the JSP page
+```
+@Controller
+public class HomeController {
+	@RequestMapping("/")
+	public String home() {
+		System.out.println("Homepage requested");
+		return "index.jsp";
+	}
+}
+```
+
+Spring IOC (inject the object you will need)
+we have object of HttpServletRequest, so it will automatically give you
+
+#### RequestParam
+Similar as PathParam (@Path and @PathParam and {})
+RequestParam @RequestParam("name") next to the variable
+```
+@RequestMapping("add")
+public String add(@RequestParam("num1") int i, @RequestParam("num2") int j, HttpSession session) {
+    int k = i + j;
+    session.setAttribute("num3", k);
+    
+    return "result.jsp";
+}
+```
+We can even remove the HttpSession by ModelAndView
+```
+	@RequestMapping("add")
+	public ModelAndView add(@RequestParam("num1") int i, @RequestParam("num2") int j) {
+		ModelAndView mv = new ModelAndView();
+		mv.setViewName("result.jsp");
+		int k = i + j;
+		mv.addObject("num3", k);
+		
+		return mv;
+	}
+```
+
+#### Prefix and Suffix (for different view eg different extension file JSP, html, etc)
+web-inf (private folder)
+webapp (public folder)
+if jsp file stored in \webapp\views
+under application.properties
+spring.mvc.view.prefix=/views/
+spring.mvc.view.suffix=.jsp
+
+ModelAndView is similar as HttpSession
+
+#### ModelAndView VS Model
+Send Request and want Data in Model, use ModelAndView or Model, ModelMap
+ModelAndView need setViewName
+Model dont need
+```
+@RequestMapping("add")
+public String add(@RequestParam("num1") int i, @RequestParam("num2") int j, Model m) {
+    int k = i + j;
+    m.addAttribute("num3", k);
+    return "result";
+}
+```
+#### Model vs ModelMap
+ModelMap support Map, adding data in the Map Object
+Simple Object, go for Model. Data in Map format , go for ModelMap
+
+#### Object reference 
+```
+	@PostMapping("addAlien")
+	public String addAlien(@RequestParam("id") int id, @RequestParam("name") String name, Model m) {
+		Alien a = new Alien();
+		a.setAid(id);
+		a.setAname(name);
+		m.addAttribute("alien",a);
+		return "result";
+	}
+```
+We can ignore the Alien creation and setter/getter, by simply passing as variable
+1. make form name same as class attribute ()
+```
+   		Enter id:<input type="text" name="aid"><br>
+		Enter name:<input type="text" name="aname"><br>
+```
+2. pass class as varaible , and add @ModelAttribute
+```
+	@PostMapping("addAlien")
+	public String addAlien(@ModelAttribute Alien a) {
+		return "result";
+	}
+```
+If JSP ${a1} , the variable name is a, we can add "a1" to change it
+```
+	@PostMapping("addAlien")
+	public String addAlien(@ModelAttribute("a1") Alien a, Model m) {
+		m.addAttribute("alien",a);
+		return "result";
+	}
+```
+If without ModelAttribute , it will work only when name is same
+JSP ${alien} , Alien a (class Alien name == alien)
+#### Conclusion of Post 
+1. use RequestParam
+2. use ModelAndView or Model or ModelMap
+3a. ModelAndView (setViewName or Constructor, addObject)
+3b. Model as variable, (addAttribute by RequestParam)
+3c. @ModelAttribute , match <form> name tag and class variable name (1 line already done, variable define + return)
+
+#### ModelAttribute at Method Level
+It will execute ModelAttribute annotation method before any RequestMapping
+```
+	@ModelAttribute
+	public void modelData(Model m) {
+		m.addAttribute("name", "Aliens");
+	}
+	call it in jsp ${name}
+	
+```
 
 
+#### Spring MVC (Without Spring Boot)
+Manual Configuration
+1. mention this is Spring MVC, all controller have annotations
+2. 
+
+#### Spring MVC (for web) Spring Context (for IoC and DI)
+#### Mistake made (Java 17 above use jakarta + Tomcat 10, below use javax + Tomcat 9 below)
+```
+	<servlet>
+		<servlet-name>peter</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+	</servlet>
+	
+	create peter-servlet.xml , could be anyname defined follow by servlet-name
+	
+```
+More complicated we need web.xml and peter-servlet.xml to have DispatcherServlet mapping
+web.xml
+```
+<!DOCTYPE web-app PUBLIC
+ "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+ "http://java.sun.com/dtd/web-app_2_3.dtd" >
+
+<web-app>
+	<servlet>
+		<servlet-name>peter</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>peter</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+	
+</web-app>
+
+```
+
+peter-servlet.xml
+```
+<?xml version="1.0" encoding="utf-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+		xmlns:ctx="http://www.springframework.org/schema/context"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context.xsd">
+	
+		<ctx:component-scan base-package="com.peter"></ctx:component-scan>
+		<ctx:annotation-config></ctx:annotation-config>
+		
+		<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+			<property name="prefix" value="/views/"></property>
+			<property name="suffix" value=".jsp"></property>
+		</bean>
+
+</beans>
+```
 
 
+#### Spring Boot MVC (GetMapping)
+in String return of Mapping(get,post), it will search for the name
+
+#### Spring with Hibernate
+require depedencies (spring-webmvc, spring-orm, hibernate-core, spring-tx, mysql connector, c3p0)
+![img_1.png](img_1.png)
+
+DAO layer (Data Access Object, eg configure using Hibernate, connect to Database, make a class to create method to access database)
+name as DAO or Repository
+
+Begin Transaction before hibernate factory or any update or query
+
+#### Spring Boot Starter Data JPA
+allow connecting to Database using Spring Application
+#### Spring Boot JPA Repository 
+simply just 1 class ,1 repo extends JpaRepository, autowired repo and then findAll() to achieve
+RequestParam (for primitive type GET post)
+ModelAttribute (for reference)
+
+#### Query DSL query domain-specific language
+depends on what variable, properties, JPA will provide you the query, follow particular structure
+eg (start with findBy{varname} , findByAname(String colName))
+add OrderBy after it, findByAnameOrderByAidDesc, it will sorted
+#### Spring Boot JPA Annotation Query
+use SQL/JPQL rather than method (use @Query and @Param)
+```
+	@Query("from Alien where aname= :name")
+	List<Alien> find(@Param("name") String aname);
+```
+native SQL
+```
+	@Query(value="SELECT * FROM Alien where aname= :name", nativeQuery = true)
+	List<Alien> find(@Param("name") String aname);
+```
+
+#### REST Representational State Transfer
+Now Two Application , client want data, so its not about design if two web application
+application will not know about the weather data, so request other server to have data (return in xml/json format)
+simply mean no parameter need (no action need) but use link as getting data which is the current object data (with the help of REST)
+so we have RESTful web Service/API
+IN REST, every request is stateless, server dk client have send the request before, every request from client will have all the data 
+only way is server give you token, so use token to verify you been there before
+RESTful web service
+1. we not work on action but noun (www.abc.com/employee)
+2. request is stateless, cant maintain session
+3. we are talking about the state of object(all the current value of data)
+4. not gonna pass parameter in the URL
+5. client will not be normal browser 
+6. Rest use in-built HTTP protocol (GET,POST,PUT,DELETE)
+7. If create new data(resources) on the server, use POST, update resources(PUT), fetch(GET)
+client :Postman, server:local server
 
 
+#### @ResponseBody
+@ResponseBody return the string as information not jsp name
+If send json format , return type as List<Alien> not String
+Spring Boot use Jackson to convert Json format or java Object
+
+#### repo.findById vs repo.getById
+findById returns an Optional and gracefully handles the absence of an entity
+Alien alien = repo.findById(id).orElse(new Alien(0, ""));
+getById directly returns the entity and throws an exception if it doesn't exist
+Alien alien = repo.getById(id)
+**IMPORTANT , @ResponseBody is a must
+```
+@GetMapping("alien/{id}")
+@ResponseBody
+public Alien getAlien(@PathVariable ("id") int id) {
+    Alien alien = repo.findById(id).orElse(new Alien(0, ""));
+    return alien;
+}
+```
+#### RequestParam vs PathParam vs PathVariable
+1. if link ("http://localhost:8080/springmvc/hello/101?param1=10&param2=20"), use RequestParam
+RequestParam(defaultValue="default if null", name="param1", required="true|false", value="param1")
+function of name and value attribute is same
+```
+public String getDetails(
+@RequestParam(value="param1", required=true) String param1,
+@RequestParam(value="param2", required=false) String param2){xxx}
+```
+2. if link ("http://localhost:8080/springmvc/hello/101?param1=10&param2=20")
+```
+PathVariable (not taken parameter but the path value here is 101)
+@RequestMapping("/hello/{id}")
+    public String getDetails(@PathVariable(value="id") String id,
+    @RequestParam(value="param1", required=true) String param1,
+    @RequestParam(value="param2", required=false) String param2){xxx}
+```
+PathVariable (Spring/Jersey based), RequestParam(Servlet session parameter)
+
+#### RestController vs Controller
+in @RestController ,no need to have @ResponseBody in GET method
+however when user send data in XML/JSON, not FORM, it will need @RequestBody next to the reference type
+
+#### Jackson Core(Json) , Jacjson XML (XML)
+Jackson Core only accept sending Json GET POST request, need extra jar
+
+#### format : Produces(send to client), Consumes(receive from client)
+we can limited the request, like user can only ask for JSON request
+In Jersey @Produces(MediaType.APPLICATION_JSON)
+In Spring @GetMapping(path="aliens", produces= {"application/xml"})
+
+@RequestBody will taken XML/JSON to Java Object
+produces or consumes can take constant("MediaType.APPLICATION_JSON_VALUE") or string("application/xml")
+``` 
+@PostMapping(path="alien", consumes={"application/xml", "application/json"}) // add
+public Alien addAlien(@RequestBody Alien alien) {
+    repo.save(alien);
+    return alien;
+}
+```
+
+#### Header (Content-Type, Accept)
+Accept (how user want the received data format be) client < server
+Accept:application/xml
+Content-Type(how user send the data in which format to server) client -> server
+Content-Type:application/xml

@@ -136,3 +136,39 @@ SELECT MAX(num) as num From
 SELECT num from MyNumbers Group By num Having count(num) = 1
 ) AS unique_number;
 ~~~~
+
+#### 1731 (JOIN table allow outer access second table e2)
+(JOIN subquery allow inner access outer table e1)
+eg SELECT e.employee_id, e.name, (SELECT name from employees e1 where e.reports_to = e1.employee_id) AS name FROM employees e;
+sub query can access e.xxx but e1 is not accessible to outer world
+~~~~sql
+SELECT e1.employee_id, e1.name, count(e2.employee_id) AS reports_count, ROUND(AVG(e2.age)) AS average_age
+FROM employees e1
+JOIN employees e2 ON e2.reports_to = e1.employee_id
+GROUP BY employee_id
+Order By employee_id;
+~~~~
+#### 1789 (UNION not allow share table column, must same column length)
+~~~~sql 
+SELECT employee_id, department_id FROM Employee Group By employee_id HAVING COUNT(*) = 1
+UNION
+SELECT employee_id, department_id FROM Employee Where primary_flag = 'Y'
+
+
+# Window Function (COUNT)
+SELECT 
+  employee_id, 
+  department_id 
+FROM 
+  (
+    SELECT 
+      *, 
+      COUNT(employee_id) OVER(PARTITION BY employee_id) AS EmployeeCount
+    FROM 
+      Employee
+  ) EmployeePartition 
+WHERE 
+  EmployeeCount = 1 
+  OR primary_flag = 'Y';
+
+~~~~

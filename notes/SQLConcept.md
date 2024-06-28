@@ -118,3 +118,62 @@ SELECT customer_id, COUNT(*) FROM Delivery => output 1 row
 eg {"headers": ["customer_id", "COUNT(*)"], "values": [[1, 7]]}
 SELECT customer_id, COUNT(*) FROM Delivery GROUP BY customer_id => output many row accroding to number of customer_id
 eg {"headers": ["customer_id", "COUNT(*)"], "values": [[1, 2], [2, 2], [3, 2], [4, 1]]}
+
+#### Group By and Having
+SELECT class FROM Courses GROUP BY class HAVING COUNT(student) >= 5 ;
+// we only use Having with aggregate function after GROUP BY
+
+#### Subquery
+// We allow from a  table from subquery
+eg 619
+SELECT MAX(num) as num From
+(
+SELECT num from MyNumbers Group By num Having count(num) = 1
+) AS unique_number;
+
+SELECT MAX(num) AS num  FROM MyNumbers WHERE num IN (SELECT num FROM MyNumbers GROUP BY num HAVING COUNT(*) = 1);
+https://leetcode.com/problems/biggest-single-number/discuss/3787911/5-7-Easy-different-solutions
+
+#### LIMIT & OFFSET 
+LIMIT is after Group By
+The SQL query below says "return only 3 records, start on record 4 (OFFSET 3)":
+SELECT * FROM Customers LIMIT 3 OFFSET 3;
+
+#### Null on Aggregate function
+MAX(null), SELECT(null) as num , all will return null as value
+SELECT (SELECT num FROM MyNumbers GROUP BY num HAVING COUNT(num) = 1 ORDER BY num DESC LIMIT 1) AS num; 
+
+#### Subquery allow change name of column
+SELECT num.num2 from (SELECT num as num2 FROM MyNumbers GROUP BY num HAVING COUNT(num) = 1 ORDER BY num DESC LIMIT 1) as num; 
+
+#### Order Sequence
+FROM & JOINs determine & filter rows
+WHERE more filters on the rows
+GROUP BY combines those rows into groups
+HAVING filters groups
+ORDER BY arranges the remaining rows/groups
+LIMIT filters on the remaining rows/groups
+
+1. FROM
+2. ON`
+3. JOIN
+4. WHERE
+5. GROUP BY
+6. WITH CUBE or WITH ROLLUP
+7. HAVING
+8. SELECT
+9. DISTINCT
+10. ORDER BY
+11. TOP
+
+#### 1731 (JOIN table allow outer access second table e2)
+(JOIN subquery allow inner access outer table e1)
+eg SELECT e.employee_id, e.name, (SELECT name from employees e1 where e.reports_to = e1.employee_id) AS name FROM employees e;
+sub query can access e.xxx but e1 is not accessible to outer world
+
+#### 1789 (UNION not allow share table column, must same column length)
+~~~~sql 
+SELECT employee_id, department_id FROM Employee Group By employee_id HAVING COUNT(*) = 1
+UNION
+SELECT employee_id, department_id FROM Employee Where primary_flag = 'Y'
+~~~~
