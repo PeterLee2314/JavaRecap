@@ -177,3 +177,33 @@ SELECT employee_id, department_id FROM Employee Group By employee_id HAVING COUN
 UNION
 SELECT employee_id, department_id FROM Employee Where primary_flag = 'Y'
 ~~~~
+
+#### Partition
+Mysql Partition 會將 table 依指定條件拆為多張隱藏 table
+如此一來 APP 端不需另做修改可以直接用既有方式 query 查詢。
+A PARTITION BY clause is used to partition rows of table into groups.
+It is useful when we have to perform a calculation on individual rows of a group using other rows of that group.
+It is always used inside OVER() clause.
+The partition formed by partition clause are also known as Window.
+This clause works on windows functions only. Like- RANK(), LEAD(), LAG() etc.
+If this clause is omitted in OVER() clause, then whole table is considered as a single partition
+The syntax for Partition clause is-
+
+Window_function ( expression )
+Over ( partition by expr [order_clause] [frame_clause] )
+Here, order_clause and frame_clause are optional.
+expr can be column names or built-in functions in MySQL.
+But, standard SQL permits only column names in expr.
+
+dense_rank() is built-in function to get rank (1,2,3 by order)
+~~~~sql 
+SELECT 
+  *, 
+  COUNT(employee_id) OVER(PARTITION BY employee_id) AS EmployeeCount 
+FROM 
+  Employee
+  
+select challenge_id, h_id, h_name, score, 
+dense_rank() over ( partition by challenge_id order by score desc ) 
+   as "rank", from hacker;
+~~~~
