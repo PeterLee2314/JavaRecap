@@ -909,7 +909,7 @@ RESTful web service
 client :Postman, server:local server
 
 
-#### @ResponseBody
+#### @ResponseBody (Server return)  @RequestBody(User send to Server)
 @ResponseBody return the string as information not jsp name
 If send json format , return type as List<Alien> not String
 Spring Boot use Jackson to convert Json format or java Object
@@ -919,7 +919,7 @@ findById returns an Optional and gracefully handles the absence of an entity
 Alien alien = repo.findById(id).orElse(new Alien(0, ""));
 getById directly returns the entity and throws an exception if it doesn't exist
 Alien alien = repo.getById(id)
-**IMPORTANT , @ResponseBody is a must
+**IMPORTANT , @ResponseBody is a must in REST
 ```
 @GetMapping("alien/{id}")
 @ResponseBody
@@ -985,3 +985,52 @@ Model : data pass through all layers , eg a java class , student, teacher ,etc
 #### @Data
 @Entity (this is a model)
 @Data (auto generate Getter/Setter by lambok)
+
+#### AOP(Aspect Oriented Programming) in Spring 
+Call method should always maintain log
+Shouldn't write extra code inside the business logic, create seperate class
+eg in Controller , getAliens method, we should add LoggingAspect class and ues this class to track getAliens method
+Cross Cutting Cocerns, which common non-business logic store other place (eg LoggingAspect)
+How Cross Cutting Cocerns will be called => That call AOP
+
+#### AOP 
+1. Aspect (1 class will have all 3C method) that class is Aspect
+2. Join Point (Our business logic have certain method, if want to maintain log we need to connect them)
+Therefore, the getAliens is the Join Point, the Log method is the Advice
+3. Advice (non business logic method)
+4. That Log become Advice
+5. Pointcut (Wild Card Expression, that I want to exceute log whenever aliens) => expression which we use
+6. Weaving (Connect actual method with the advice, can be done connection in compile/runtime)
+However, IN AOP we do it in RUNTIME
+
+##### Type of Advices
+1. Before Advices (want to call log, call log before getAliens)
+2. After Returning Advices (call log after getAliens)
+3. Around Advice (during the exceution of getAliens)
+4. After Throwing Advice (execute when error happen)
+5. After (finally) Advice (normal or exception, will still execute)
+#### Achieve AOP
+1. @Aspect in aspect class, want Spring to know the Aspect class
+2. (add @Component)
+3. @Before (which is BeforeAdvice, there is 5 type of advice), add the expression on Before
+@Before("execution(public List<Alien> com.peter.springmvcboot.AlienController.getAliens())") // mention Join Point to be executed with 
+(Must Mention Fully Qulified Name aka Class Name eg AlienRepo, AlienController)
+(Must mention package name)
+(Mention * mean anything any object , eg List<Alien> can turn to * ) 
+Then when getAliens execute, the log will execute
+@After by default is After (finally) Advice , use @AfterReturning (work pop if no exception)
+@AfterThrowing (work if exception)
+
+** getAliens don't know Logging happening (the Cross Cutting Concern)
+Therefore, AOP can use for security, transaction, logging
+
+#### Good practice Logging (Simple Logging Facade for Java (SLF4J))
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+private static final Logger LOGGER = LoggerFactory.getLogger(LoggingAspect.class); 
+LoggingAspect now dont use sout , use LOGGER instead
+
+logging.level.root=info|debug|error|fatal|info|off (type in properties to show only logging of info,etc)
+logging.file=app.log (store the log on the app.log too)
+#### DTO (Data Transfer Object)
+usually for FORM, make a form with the class and validation
