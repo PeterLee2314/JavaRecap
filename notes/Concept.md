@@ -1032,5 +1032,142 @@ LoggingAspect now dont use sout , use LOGGER instead
 
 logging.level.root=info|debug|error|fatal|info|off (type in properties to show only logging of info,etc)
 logging.file=app.log (store the log on the app.log too)
+
+#### Spring Security
+Spring do most thing for you, except configuration
+WebSecurityConfigurerAdapter (already deprecated)
+use SecurityFilterChain to setup HttpSecurity
+use WebSecurityCustomizer to setup WebSecurity
+
+#### @Bean and POJO
+- Bean : Java object that is managed by the IoC container
+- POJO: Any java object is POJO or Plain Old Java Object
+- Java Bean (or EJB): POJO with 3 restrictions (No argument constructor, getters and setters, implements Serializable)
+- Spring Bean: Anything that is managed by Spring IoC (POJO or even struct like int, double etc)
+
+UserPrincipal (mean current user)
+
+#### Setup Spring Security
+Error Happen : (because findByUsername is correct, findByUserName is wrong) 
+Because findByXX have to be pattern, findBy{Col name}
+```
+public interface UesrRepository extends JpaRepository<User, Long> {
+User findByUserName(String username);
+}
+```
+1. AppSecurityConfig, autowired UserDetailsService, then AuthenticationProvider to setUserDetailsService
+2. MyUserDetailsService implements UserDetailsService, override loadUserByUserName, make UserRepository repo
+3. use Repository to find User(Entity)
+4. loadUserByUserName return UserDetails type, however its interface, make UserPrincipal implements UserDetails
+5. override method from UserDetails in UserPricinpal, finally return new UserPrincipal(user)
+
+by setPasswordEncoder, the user will login as usual, but behind it will encrypt it and compare the encrypted text with database 
+
+Problem of looping Login
+Solution (add ** on requestMatchers)
+```
+ .requestMatchers("/login**") // correct ,  .requestMatchers("/login") // wrong
+ login**, login.jsp
+ in requestMatchers , its not the RequestMapping value but the exactly http value 
+```
+#### Spring Security OAuth 2 (use Google login)
+login google, google will send you token and use token to login
+OAuth2 now is with repository: Spring Security OAuth2 Client
+
+#### MicroService
+will software everywhere (call car, shopping) => applications
+Build a website and contain all the services (eg shopping website)
+Services(User,Sellers,Payment,Search,Shipping)
+work on 1 particular module at a time (Big things into small group)
+Mutiple team work in different services, they still a team 
+Alot of service in 1 system (Monolithic application)
+Pros: Have everything in 1 place, you know what is happening in the application
+Cons: 
+1. Team dependencies, they dependent on each other , when go for next release,version, and deploy it when other is finish
+2. Scalability, in huge sale having multiple instance (vertical, horizontal) , however you can only scailing entire application but not
+particular one eg (search service, because many ppl will search it)
+3. Scalability 2: Stick to one technology only eg Java, they build one big application into a package, actually different services can build in different language
+4. Crashing if one services broken, whole application is dead
+
+Advantage of Microservices
+1. Independent
+2. Scalability, different service different language , scale particular service , each service is SELF-CONTAINED
+
+use API Gateway to communicate different services
+focus on designing system rather than coding
+#### Database 
+Quiz and Question is depend on each other, which we try to make the data seperate in different schema
+Question(add,remove,update,read) => go to Question database
+Quiz(createQuiz,getScore,get) => go to Quiz database to get data
+Question and Quiz communicate by HTTP
+#### Communication API (by HTTP)
+do load balancing if more than 1 quiz instance (eg 10 quiz instance 2 question instance)
+we dont want client to have so many link to do it, so we have API Gateway to distribute services (WHERE to GO)
+
+How Quiz service know Question service? By Registry
+#### Service Registry
+they can search each other
+#### What if Service down?
+Failed fast: its not responding so let us know and have solution
+
+MicroService = (Load Balancer + Service Registry + API Gateway + Failed fast)
+Every MicroService is one project
+
+#### MicroService dependency (OpenFeign, Eureka Discovery Client)
+
+#### ResponseEntity<?> type
+#### QuestionWrapper, Response.class
+#### @NoArgsConstructor (lambok, create no parameter constructor)
 #### DTO (Data Transfer Object)
-usually for FORM, make a form with the class and validation
+usually for FORM, make a class that is use for @ResponseBody
+
+#### MicroService call URL problem
+we actually dont want to hardcode (eg localhost, port number)
+1. where we are running the instance (eg localhost? peterxxx.com?)
+2. which port number?
+Thats why we need Feign Client + Service Discovery
+
+#### Feign Client
+almost same as HTTP web request, provide something a declarative way of requesting other service, no need hardcode like Rest Template to specify everything
+we use Feign for other service to request other Services (tell Feign which service to connect to, Feign will make it work)
+#### Service Discovery
+search for the question service, how to discover it , eg Eureka Server (Service Registry)
+All Microservices have to register in Eureka Server (Service Registry), 
+one microservice can search another microservice from the Euraka server using the Euraka Client
+#### Eureka Server
+add @EnableEurekaServer on main 
+Server Side:
+server.port=8761
+eureka.instance.host=localhost // where is the Eureka server located
+eureka.client.fetch-registry=false // not allow to fetch registry of the server
+eureka.client.register-with-eureka=false // not allow to register it
+Client Side:
+#### Feign
+Feign helps you connect quiz service to question service, there is some method to use from question for quiz 
+eg (generate,getQuestion, getScore)
+How to achieve, make interface (QuizInterface) add annotation @FeignClient("QUESTION-SERVICE") (name should be the same as spring application name)
+add the without-body-method that QuestionService have, also make the RequestMapping value complete "eg(create) -> (question/create)"
+
+Response entity.getBody will only get what is inside eg Response<List<Integer>> will have List<Integer> only
+@@EnableFeignClients must have in main.java
+@ElementCollection // use ElementCollection if only single type (eg String, Integer) if Entity then use ManytoMany
+
+
+List<QuestionWrapper> questions = quizInterface.getQuestionsFromId(questionIds).getBody();
+return new ResponseEntity<>(questions, HttpStatus.OK);
+IS SAME AS
+ResponseEntity<List<QuestionWrapper>> questions = quizInterface.getQuestionsFromId(questionIds);
+return questions
+#### Load Balancing 
+multiple Question Service instance port:8080, 8081, FeignClient will distribute load into 8080 and 8081
+#### API Gateway
+Important concept in MicroService
+for user, its not matter which port or service its using, just 1 url and did all the thing
+API Gateway know the other Service Name (QUESTION-SERVICE, QUIZ-SERVICE) because they are on the service-registry(Eureka server)
+so let say API Gateway is allowing to search (spring.cloud.gateway.discovery.locator.enabled=true) and on port 8765, 
+localhost:8765/QUIZ-SERVICE/quiz/get/1
+
+API Gateway 404 solution: remove Spring Cloud Starter Gateway and add Spring Cloud Starter Gateway 
+
+#### Rest Template
+send Request from server(client) to another server(server) by the REST url (localhost:8080/question/allQuestions)
