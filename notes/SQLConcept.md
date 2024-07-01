@@ -207,3 +207,19 @@ select challenge_id, h_id, h_name, score,
 dense_rank() over ( partition by challenge_id order by score desc ) 
    as "rank", from hacker;
 ~~~~
+
+#### SQL Join (Inclusive, Exclusive)
+SQL JOIN and SQL OUTER JOIN is same, only not same when Inclusive or Exclusive(Where X.key IS NULL)
+Generally JOIN is inclusive
+FULL JOIN in MYSQL is not FULL OUTER JOIN, it simply combine all data together (eg 3 row on table A, 4 row on table B => 3*4 = 12)
+in FULL OUTER JOIN, it should return no matching LEFT,RIGHT row, either matching LEFT row or matching RIGHT row (LEFT no Match + Right no Match + Match)
+Basically LEFT JOIN(Exclusive) + RIGHT JOIN(Exclusive) + INNER JOIN  OR  LEFT JOIN result + RIGHT JOIN result
+to achieve FULL OUTER JOIN (aka FULL JOIN)
+SELECT * FROM TableA A
+LEFT JOIN TableB B ON A.name = B.name
+UNION
+SELECT * FROM TableA A
+RIGHT JOIN TableB B ON A.name = B.name
+
+the UNION will remove duplicate rows, that's why it works
+![img_2.png](SQLJoin.png)
