@@ -1171,3 +1171,92 @@ API Gateway 404 solution: remove Spring Cloud Starter Gateway and add Spring Clo
 
 #### Rest Template
 send Request from server(client) to another server(server) by the REST url (localhost:8080/question/allQuestions)
+
+
+#### Autoboxing and Unboxing with Stream
+Arrays.stream(num1).boxed() // turn int stream to Integer stream
+#### Collection vs Collections vs Collectors
+Collection (interface) with common methods eg List, Set, Queue (Map is not Collection but MapCollection)
+implementing class like ArrayList, HashSet, LinkedList
+Collections:static method for Collection, sort(),reverse(),shuffle(), binarySearch(), max(), min()
+Collectors: static method from collecting elements from a stream to Collection
+The Collectors class is used in conjunction with the Stream API to perform aggregations, transformations, 
+and reductions on streams of data. It provides methods like toList(), toSet(), toMap(), joining(), counting(), groupingBy(),etc
+eg boxed().collect(Collectors.counting())
+eg Use Collectors to turn to Collection , Collections help Collection
+
+#### Collectors static method (Streams3.java)
+groupingBy(key) , groupingBy(key,key) , groupingBy(key, value)
+summingInt(Product::getNum)
+##### groupingBy (Object key, group according to condition)
+Map<Object, List<Product>> groupingResult = prodList.stream().collect(Collectors.groupingBy(Product::getBrand));
+groupingResult.forEach((k,v) -> System.out.println("key " + k + " value " + v));
+```
+key Angry value [Product{num=4, name='Popsicle', brand='Angry'}]
+key JP value [Product{num=4, name='Chocolate', brand='JP'}, Product{num=4, name='Candy', brand='JP'}, Product{num=4, name='Popsicle', brand='JP'}]
+key Kinder value [Product{num=2, name='Candy', brand='Kinder'}, Product{num=4, name='Chocolate', brand='Kinder'}]
+```
+##### partitioningBy (2 key)
+take predicate (functional interface) (return boolean)
+Predicate<Integer> greater_than = x -> (x > 10);
+prodList.stream().collect(Collectors.partitioningBy(e -> e.getNum() > 10)); 
+Partition the value when classNumber is > 10 (Map<Boolean, List<Product>> , true key and false key)
+##### collectingAndThen()
+Type parameters:
+<T> – the type of the input elements
+<A> – intermediate accumulation type of the downstream collector
+<R> – result type of the downstream collector
+<RR> – result type of the resulting collector
+public static<T,A,R,RR> Collector<T,A,RR> collectingAndThen(Collector<T,A,R> downstream, Function<R,RR> finisher)
+
+##### reduce()
+.reduce(start value, (carry, element) -> carry + element)
+eg .reduce(0, (c,e) -> c + e )// for 2,10,14 , we get int (26)
+
+#### Functional Inteface with two method
+It is not allow to have > 1 method in @FunctionalInterface
+However, if the function is by default from Object , eg toString, HashCode, which extends Object, it is allow
+```
+@FunctionalInterface
+interface A{
+    void show();
+    String toString(); // this allow, becaues its already exist by default
+}
+```
+It is best pratice to instantiate A by Anonymous Inner Class
+A obj = new A () { @Override ....}
+OR
+A obj = () -> System.out.println("Hello");  // ignore the declartion of int,double,etc and bracket if one line
+obj.show() // call it
+
+
+##### ParallelStream vs Sequential Stream
+ParallelStream:Java API chunk up stream into substream and then execute portion of stream pipeline and compile the result together
+
+Intermediate Operation (when compiler is optimizing the stream pipeline at compilation time, it can determine whether the whole stream should treat as sequential or parallel)
+Eg, when IntStream is created, I should be processing the terminal operation as the parallel stream
+so before .parallel() the IntStream already become parallel Stream because of Intermediate Operation
+
+Warming up: when class load everything takes time, and after few time its more faster eg for loop 1 to 100
+the larger the faster
+
+ParallelStream use fork join framework, when have heavy job to break to pieces. HOWEVER, if the task is not big, 
+the overhead cost larger than the speed performance
+Sequential : one thread
+Parallel : multiple thread , then collapsing all the result together
+Prevent pitfalls like concurrency, wher you have multiple thread all trying to do the same things at once on a data strcuture that shouldn't be 
+mutated concurrently 
+FOR EXAMPLE, reduce() which IS NOT WORKING IN PARALLEL, because its calculate the first value then second 
+for Parallel,if its concurrent modification safe, then use it.
+#### NQ Model (when decide Parallel OR Sequential)
+N: Number of Elements
+Q: Number of Computations per Elements
+N*Q is large, Parallel is better
+N*Q is low, parallization is bad
+
+#### Lambda Expression on Functional Interface VS Abstract class
+Abstract class cant have Lambda expression
+
+#### ZoneDateTime vs Instant 
+Instant.now() dont look at local time zone
+ZoneDateTime look at local time zone

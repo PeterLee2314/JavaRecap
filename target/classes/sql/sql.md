@@ -45,10 +45,130 @@ WHERE e.employee_id = p.employee_id
 group by project_id;
 ~~~~
 
+#### 1633
 ~~~~sql 
+SELECT contest_id, ROUND(COUNT(DISTINCT user_id) * 100 / (SELECT COUNT(user_id) FROM Users),2) 
+AS percentage
+FROM Register GROUP BY contest_id  ORDER BY percentage DESC, contest_id;
+~~~~
+
+
+#### 1211
+~~~~sql 
+select query_name, ROUND(AVG(rating / position) ,2) as quality , ROUND(AVG( rating < 3)*100,2) as poor_query_percentage 
+from Queries Where query_name is not null
+group by query_name 
+;
+select query_name,
+round(avg(cast(rating as decimal) / position), 2) as quality,
+round(sum(case when rating < 3 then 1 else 0 end) * 100 / count(*), 2) as poor_query_percentage
+from queries group by query_name
+;
+
+#OR use SUM(IF(rating < 3, 1, 0)) 
+#OR use CASE WHEN
+~~~~
+
+#### 1193
+~~~~sql
+SELECT 
+    DATE_FORMAT(trans_date, '%Y-%m') as month, country, 
+    COUNT(id) AS trans_count , 
+    SUM(IF(state = 'approved', 1,0)) as approved_count,
+    SUM(amount) AS trans_total_amount ,
+    SUM(IF(state = 'approved', amount, 0)) AS approved_total_amount 
+from Transactions group by month,country; 
+~~~~
+#### 1174
+~~~~sql
+#SLOW (because of JOIN)
+SELECT
+ROUND(SUM(IF(d2.first_order = d1.customer_pref_delivery_date, 1,0))*100/COUNT(DISTINCT d1.customer_id),2)
+AS immediate_percentage FROM Delivery d1
+INNER JOIN
+(SELECT 
+    MIN(order_date) AS first_order, customer_id
+    FROM Delivery GROUP BY customer_id
+ ) as d2 ON d1.customer_id = d2.customer_id 
+ ;
+ 
+#FAST (JUST 2 SELECT)
+SELECT ROUND(AVG(order_date = customer_pref_delivery_date)*100,2) AS immediate_percentage FROM Delivery
+WHERE (customer_id,order_date) IN
+(
+SELECT customer_id, MIN(order_date) FROM Delivery group by customer_id
+); 
+~~~~
+
+#### 550
+~~~~sql
+# WRONG (because there would be case that 09/10 (first time), 9/13 (second time) and 9/14(third time), but you calculate it
+# should only work when consecutive is first time and second time
+/*
+SELECT ROUND(COUNT(*)/(SELECT COUNT(DISTINCT player_id) from Activity),2) AS fraction from Activity a1 WHERE 
+EXISTS (SELECT * FROM Activity a2 WHERE a1.event_date = DATE_SUB(a2.event_date, INTERVAL 1 DAY) AND a1.player_id = a2.player_id)
+
+select ROUND((count(*)/(select count(distinct player_id) from activity)),2) as fraction
+from activity a1 join activity a2
+on a1.player_id = a2.player_id
+and datediff(a1.event_date,a2.event_date) = 1
+*/
+
+#Correct
+SELECT ROUND(COUNT(*)/(SELECT COUNT(DISTINCT player_id) FROM Activity),2) AS fraction FROM Activity
+WHERE (player_id, DATE_SUB(event_date, INTERVAL 1 DAY)) # assume the date is second time and -1 , it should match first time when consecutive 
+    IN (
+        SELECT player_id, MIN(event_date) FROM Activity Group By player_id #Get the Min date so it must be the first time
+    )
 
 ~~~~
 
+#### 596
+~~~~sql
+SELECT class FROM Courses GROUP BY class HAVING COUNT(student) >= 5 ; 
+// we only use Having with aggregate function after GROUP BY
+~~~~
+
+#### 619
 ~~~~sql 
+SELECT MAX(num) as num From
+(
+SELECT num from MyNumbers Group By num Having count(num) = 1
+) AS unique_number;
+~~~~
+
+#### 1731 (JOIN table allow outer access second table e2)
+(JOIN subquery allow inner access outer table e1)
+eg SELECT e.employee_id, e.name, (SELECT name from employees e1 where e.reports_to = e1.employee_id) AS name FROM employees e;
+sub query can access e.xxx but e1 is not accessible to outer world
+~~~~sql
+SELECT e1.employee_id, e1.name, count(e2.employee_id) AS reports_count, ROUND(AVG(e2.age)) AS average_age
+FROM employees e1
+JOIN employees e2 ON e2.reports_to = e1.employee_id
+GROUP BY employee_id
+Order By employee_id;
+~~~~
+#### 1789 (UNION not allow share table column, must same column length)
+~~~~sql 
+SELECT employee_id, department_id FROM Employee Group By employee_id HAVING COUNT(*) = 1
+UNION
+SELECT employee_id, department_id FROM Employee Where primary_flag = 'Y'
+
+
+# Window Function (COUNT)
+SELECT 
+  employee_id, 
+  department_id 
+FROM 
+  (
+    SELECT 
+      *, 
+      COUNT(employee_id) OVER(PARTITION BY employee_id) AS EmployeeCount
+    FROM 
+      Employee
+  ) EmployeePartition 
+WHERE 
+  EmployeeCount = 1 
+  OR primary_flag = 'Y';
 
 ~~~~

@@ -223,3 +223,79 @@ RIGHT JOIN TableB B ON A.name = B.name
 
 the UNION will remove duplicate rows, that's why it works
 ![img_2.png](SQLJoin.png)
+
+#### COUNT vs GROUP + COUNT
+without GROUP, COUNT will basically consider 1 row as 1 count
+with GROUP, COUNT will consider the GROUP By column, when same, as 1 count
+
+#### Sequnce
+SELECT => FROM => WHERE => GROUP BY => HAVING => ORDER BY
+
+#### lead(column, index)  over()
+lead will go to next row
+over() will construct a window that contain the record
+eg lead(id,1) over() nextRow
+SUM(kilos_produced) OVER() total_produced
+so that the along side will be the total_produced
+~~~~sql
+SELECT farmer_name,
+       kilos_produced,
+       SUM(kilos_produced) OVER() total_produced
+ FROM  orange_production
+WHERE  crop_year = 2017
+
+#Leet 180
+with cte as (
+    select num,
+    lead(num,1) over() num1,
+    lead(num,2) over() num2
+    from logs
+
+)
+
+select distinct num ConsecutiveNums from cte where (num=num1) and (num=num2)
+~~~~
+
+#### Think logic
+Generally 1 aggreate function is find the maximum value 
+SELECT MAX(num) FROM shop GROUP BY id; // find the maximum num of each id
+Generally the specific column to get new column value, we use sub-query, eg Leet1164
+we get product_id, new_price as price ... IN (Select product_id, MAX(change_date))
+here we use change_date to get the price
+
+#### Window function
+In MySQL, they say the window function performs an aggregate-like operation on a set of query rows. Even though they work almost the same, 
+the aggregate function returns a single row for each target field, but the window function produces a result for each row.
+
+Aggregate function could be Window Function with OVER clause such as MAX, MIN, SUM. Without OVER, its aggregate function
+As for Non-Aggregate function like LEAD, LAG,RANK, FIRST_VALUE, they need to use OVER clause
+eg
+~~~~sql
+FIRST_VALUE(target field) 
+        OVER(
+    PARTITION BY target field // Target field to group
+    ORDER BY target field // Target field to order
+)
+~~~~
+The PARTITION BY works the same as GROUP BY. The only difference with GROUP BY is that it produces the result for each row.
+You should be careful that we use the window function on the SELECT clause. Thus, it executes after the JOIN, WHERE, and GROUP BY clauses.
+Leet1164 ( we select the first_value group by the product_id and order by the change date that <= 2019-08-16 DESC)
+~~~~sql
+SELECT DISTINCT
+  product_id,
+  FIRST_VALUE (new_price) OVER (
+    PARTITION BY
+      product_id
+    ORDER BY
+      change_date DESC
+  ) AS price
+FROM
+  Products
+      WHERE
+  change_date <= '2019-08-16' 
+~~~~
+
+#### MySQL COALESCE()
+Return the first non-null value in a list:
+SELECT COALESCE(NULL, NULL, NULL, 'W3Schools.com', NULL, 'Example.com');
+will return 'W3Schools.com'
