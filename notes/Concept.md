@@ -1298,3 +1298,60 @@ RED(60) {
  @Override 
  public void display() {...}
 },
+
+#### Special equal comparison
+```
+@Override
+public boolean equals(Object obj) {
+    if(obj == this) {return true;}
+    else if(obj instance of ClassName nameObj){
+        return (Objects.equals(this.name, nameObj.name)); 
+    }
+}
+@Override
+public int hashCode() {
+    return Objects.hash(this.name);
+}
+```
+// this allow us to do  obj1.equals(obj2)
+
+#### Record VS Class
+when no modification need use Record, when comparison use Record, when want data immutable use Record
+canonical constructor (no need to copy all parameters, because all parameter included by default)
+
+```
+public Record FullName(String first, String middle, String last){ // record will change equals automatically 
+    public FullName {
+        //  canonical constructor 
+    }
+    public FullName(String lastName) {
+        this(null, null, last) // pass to canonical constructor
+    }
+}
+```
+
+#### Spring Boot Cloud Gateway
+allow localhost:3000 (react) to fetch data from gateway(8765) -> question(8080)
+```
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: "http://localhost:3000"
+            allowed-methods: "*"
+            allowed-headers: "*"
+            allow-credentials: true
+server:
+  port: '8765'
+
+```
