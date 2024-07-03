@@ -1260,3 +1260,41 @@ Abstract class cant have Lambda expression
 #### ZoneDateTime vs Instant 
 Instant.now() dont look at local time zone
 ZoneDateTime look at local time zone
+
+#### Generics & Bounding generic type (extends)
+T[] and <T> , <T,U> , <T,U,V>  <T extends Comparable<T>> // all is legit 
+E – Element (used extensively by the Java Collections Framework, for example ArrayList, Set etc.)
+K – Key (Used in Map)
+N – Number
+T – Type
+V – Value (Used in Map)
+S,U,V etc. – 2nd, 3rd, 4th types
+
+Bound
+<T extends Number> // make sure my class only have type arguments that is Number (also work in Integer) 
+<T implements XX>
+so that the class will consider child only with Number parent
+```
+<T> : Type
+<?> : unknown type for passing value that you wont expect
+GenericDemo<Integer> a = new GenericDemo<>(5);
+GenericDemo<?> b = a; //work
+GenericDemo<Number> c = new GenericDemo<>(10);
+
+```
+Type erasure a.getClass() == c.getClass()//return true
+When compiled the type arguments is gone and become
+```
+GenericDemo a = new GenericDemo(5);
+sout((Integer) a.getData());
+```
+
+#### enum
+when value never change, use enum
+Color.valueOf("Yellow") // select the enum of yellow class
+abstract method in enum (enum cant be abstract) , use override to override it
+inside enum class
+RED(60) {
+ @Override 
+ public void display() {...}
+},
