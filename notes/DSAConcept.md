@@ -46,3 +46,9 @@ Initial Tree is: {4=15, Geeks=20, Welcomes=25, You=30}
 The headmap is: {4=15, Geeks=20, Welcomes=25} // we get value before You
 map_head = tree_map.headMap("You");  
 For details : DataStructure\RedBlackTree.java
+
+#### LC
+A general rule of thumb is that LC will give TLE if you exceed $10^8$ O(1) operations. So when you see a problem with $n=10^5$, 
+you already know the TC must be at max $O(n\log n)$. This can help guide your thinking.
+n = 10^5 , 5^2 = 10^10 which exceed 10^8 = 1.0e25
+n = 10^5, n*logn = (5*10^5)log10 = 5*100_000 = 500000
