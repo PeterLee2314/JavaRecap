@@ -1,1 +1,1 @@
-This repository contains things about Java & SQL concept.
+This repository contains things about Java & SQL concepts.
