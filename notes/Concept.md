@@ -1355,3 +1355,22 @@ server:
   port: '8765'
 
 ```
+
+#### LocalTime VS LocalDate VS LocalDateTime
+
+
+#### User, Token, Role
+each have Repo, and each have ManyToMany(User & Role) & ManyToOne (Token & User) relationship
+
+#### Function<C, T>
+Because extractClaim is a method, Claims::getSubject is a method
+<T> is the return type of Claims::getSubject, even though Claims::getSubject return String, we just <T> to return a implicit type
+```
+private String extractUsername(String token) {
+    return extractClaim(token, Claims::getSubject);
+}
+
+public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
+
+} 
+```
