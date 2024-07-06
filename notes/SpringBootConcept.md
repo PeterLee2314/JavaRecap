@@ -270,6 +270,64 @@ class XXX {
 - production ready feature (metric, health check)
 - no XML configuration
 
+#### @Bean on method, @Component on class
+```
+var ctx = SpringApplication.run(DemoApplication.class, args);
+Hello hello = ctx.getBean("Hello", Hello.class);
+
+@Bean
+public Hello createHelloClass() {
+    return new Hello();
+}
+```
+After @Component, we don't need @Bean on createHelloClass 
+```
+Hello hello = ctx.getBean(Hello.class);
+```
+@Component, @Service, @Repository, all create the class as Spring Bean
+
+#### @Config/ Configuration file (use to store @Bean)  (create Class Object)
+with @Configuration, Spring will scan the class first before execution
+Three way for getBean, getBean(Hello.Class) , getBean(Bean Method name, Hello.class)  , getBean(Bean name, Hello.class) 
+in this case is getBean("createHelloClass", Hello.class)
+OR @Bean("createHello") ->  getBean("createHello", Hello.class)
+
+#### @Service , use other service / bean inside every method  (Use Class Object (by Dependency Injection using @Autowired))
+all Object store reference should be "private final" when using Constructor
+As for @Autowired on Object, should be "private" only
+@Autowired on Object OR on Constructor
+Reminder: When Start, the Spring create Bean for looking @Component class or @Bean method
+then when there is service.java using @Autowired, it will try to find where the Bean it need inside the method OR variable
+then automatically injected
+Reminder 2: we no longer need @Autowired on Constructor Injection, Spring will try to inject anything injectable
+```
+//MyFirstService.java
+@Service
+public class MyFirstService {
+
+    private final MyFirstClass myFirstClass;
+
+    public MyFirstService(MyFirstClass myFirstClass) {
+        this.myFirstClass = myFirstClass;
+    }
+
+    public String tellAStory() {
+        return "The bean is saying : " + myFirstClass.sayHello() ;
+    }
+}
+```
+#### 2 Bean (Primary, Secondary)
+when two method return the same object with @Bean annotation, Dependency Injection will not work, too ambiguous
+use @Qualifier under @Bean to change Bean name
+then add @Qualifier after the parameter inside Service (parameter inside METHOD, not variable!)
+OR
+use @Primary under @Bean
+
+
+
+#### ShortCut
+Ctrl+Alt+O , clean unused import
+
 ##### Login/Register Design
 Normally, Login and Register involves:
 Model: User,Token, Role

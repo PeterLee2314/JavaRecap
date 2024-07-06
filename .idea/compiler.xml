@@ -9,8 +9,5 @@
         <module name="JavaNoteRecap" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="JavaNoteRecap" target="17" />
-    </bytecodeTargetLevel>
   </component>
 </project>
