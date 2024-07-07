@@ -323,7 +323,200 @@ then add @Qualifier after the parameter inside Service (parameter inside METHOD,
 OR
 use @Primary under @Bean
 
+```
+// Qualifier declared during Config method
+public MyFirstService(
+       @Qualifier("Bean1") MyFirstClass myFirstClass
+) {
+    this.myFirstClass = myFirstClass;
+}
+```
+#### Qualifier by default use @Bean method name
+@Qualifier("firstBean")
 
+#### Method Injection (allow multiple Bean injection)
+```
+@Autowired
+public void initBean(@Qualifier("Bean1") MyFirstClass myFirstClass) {
+    this.myFirstClass = myFirstClass;
+}
+```
+#### Setter Injection
+```    
+@Autowired
+    public void setMyFirstClass(@Qualifier("Bean1") MyFirstClass myFirstClass) {
+        this.myFirstClass = myFirstClass;
+}
+```
+
+#### Injection for Existing Spring Class
+do as above, just simply make @Autowired and setter injection/method injection/ constructor injection
+because the Spring class we can see in document already @Service, @Configuration OR @Component OR @Bean
+
+#### Read Environment Property (Environement OR @Value and @PropertySource)
+java.version, os.name, custom properties name
+By
+1. private Environment environment;
+2. @Annotation eg @Value(${}) for custom name, #{} for env 
+3. If in another properties file, we need to locate it first BY @PropertySource("classpath:custom.properties")
+custom.properties is the file name, classpath: is a must
+@PropertySources take arrays of @PropertySource value
+```
+@PropertySources({
+        @PropertySource("classpath:custom.properties"),
+        @PropertySource("classpath:custom2.properties")
+})
+```
+#### Spring Profiles (Change Feature, Configuration, Component by Current Profiles)
+3 way (on properties file, on Intellji, on Program)
+Community dont have this option, use variable (spring.profiles.active=dev) to switch to dev profiles
+- Provide way to segregate parts of your application configuration and make it available on certain env
+only allow certain Bean to execute in the development environment BUT NOT production env
+- ALSO, can be used for component switching can use profiles to switch out entire component or services
+EG you can use in-memory database in dev env, full database in production env
+- ALSO, can be used for toggling features, enable or disable features, put this in own profile until it's ready
+
+Its fine to have non-exist profile in properties eg spring.profiles.active=dev,test,custom
+
+By default if you dont set variable in Intellji spring.profiles.active=dev, the latter in properties will overwrite
+eg dev,test SO test will override it 
+
+by setDefaultProperties, can add properties during run time
+```
+var app = new SpringApplication(DemoApplication.class);
+app.setDefaultProperties(Collections.singletonMap("spring.profiles.active", "dev"));
+var ctx = app.run(args);
+```
+
+#### Make Spring to ava to specific profiles (make Whole Method OR Whole Class for specific profile)
+@Profile under @Bean  OR @Profile under Class
+eg @Profile("dev") , and use the Bean , only current profile is dev can use that bean, else error happen
+WHAT IF? Class is "dev" , method inside that class is "test" ?
+THEN, only when spring.profiles.active=dev,test, it will be valid
+Bean will not exist, if not under correct profile defined
+
+#### Spring Rest (Representational State Transfer)
+Treat network resources as object , access by HTTP methods
+Stateless (each HTTP request from client should contain all necessary information to server, so server dont store any data bewteen requests, keep requests isolated)
+Cacheable (prevent client reuse data)
+Layered System (architecture allows for layers within the system architecture, a client cannot ordinarily tell whether it is connected directly to an end server, for load balancing, security)
+Code on Demand (Optional) , allows server to extend functionality of a client by transfering executable code
+Uniform Interface (fundamental to the design of any restful system, simplifies and decouples the architecture, enable each part to evolve independently ) (4 principles)
+- Identification of resources
+- Manipulation of resources through these representations
+- Self-descriptive messages
+- Hypermedia As The Engine Of Application States (HATEOS)
+Rest not suitable for graphql or grpc
+
+#### Spring Rest Overview
+- Web architecture principle
+- Unique Identification of resources (URI)
+- Different resource representation
+- Hypermedia/ Linking of resources
+- Stateless communication
+- Standard method (GET, POST, PUT DELETE) , responses (200 OK, 404 Not Found)
+
+#### Spring Rest Design
+- resource should always be Plural Nouns in the API endpoint, if one instance resouce should be retrieved, pass the id in the URL
+eg GET /accounts , GET /accounts/1
+- In case of nested resources (resource under resource), get it by follow structure
+eg GET /accounts/1/payments/56
+- USE HTTP methods, to achieve CRUD
+with the same URL, /accounts, different HTTP methods (aka verbs) have different act on it , eg GET(fetch), PUT(Update), POST(insert), DELETE(delete)
+
+#### HTTP Method (aka verbs)
+resource = record
+- GET (does not affect state of resource)
+- POST (send data to server, create new resource)
+- PUT (update existing resource, or create if not exist)
+- DELETE (delete)
+- PATCH (apply partial modification to a resource, PUT is for full update, PATCH is for partial update)
+- OPTIONS (return HTTP method that the server support for the specific URL)
+- HEAD (similar to GET, only return the header of response, eg return header only without body, useful when checking whether resource exists before download OR check is it being modified )
+
+#### HTTP Status Code
+- 1XX Informational 
+- 2XX Success
+- 3XX Redirection
+- 4XX Client Error
+- 5XX Server Error
+
+##### 2XX Success
+- 200 OK mean everything went as plan in GET
+- 201 CREATED mean new resources created as a result, response send after POST or PUT (if creating resource)
+- 204 NO CONTENT mean the server successfully processed the request and there is no additional cotent to send in the response payload body 
+  - (Often DELETE) OR GET/POST/PUT (when no partifuclar info send back in response body)
+  - Its also good when server tell client , the server don't want to return any thing
+
+##### 3XX Redirection
+- 304 NOT MODIFIED (client send request include header eg if modified , if non-match) , ask the server to validate if the client's cached version of the resources is still up to date
+  - if modified tag : compare the timestamp of client fetch and server update
+  - non-match tag : compare the version token and updated token
+This 3XX redirection good for being stateless but allow for optimizing, becaues it save bandwidth and make web application faster by not resending cached info to client
+
+##### 4XX Client Error
+- 400 BAD REQUEST, server unable to understand request due to syntax
+- 401 UNAUTHORIZED, the request requires user authentication , expect authentication but failed OR not yet provided
+- 403 FORBIDDEN, client does not have the permission for the request resources
+
+##### ResponseEntity<XX> 
+XX will be the body of response
+##### @ResponseStatus
+annotate method, only use @ResponesStatus code when whole method is successfully executed (without throwing exception)
+
+##### 5XX Server Error
+- 500 INTERAL SERVER ERROR, when unexpected condition encountered by the server no more specific message is suitable
+- 503 SERVICE UNAVAILABLE, currently unavailable to handle request, becaues it's temporarily overloading or down for maintenance
+
+##### URL enter is always GET request, thats why Postman to use
+##### @RequestBody on parameter
+convert HTTP request body to speicfic Java object
+@RequestBody String message, it will convert HTTP request to String
+When send request with JSON format contain all the name and value, however WITHOUT setter,getter for CLASS, it will not able to modify it.
+Getter : when an instance of an object is serialized into a format like JSON (the getter method are called to access the current state of the object)
+the value return by Getter method are then written into serialized format
+Setter: populate the field of a newly created object with the data from the serialized format
+##### JsonProperty (jackson library)
+JsonProperty for rename the json name in request match the variable
+@JsonProperty("c-name")
+String customerName, now the json post use c-name 
+##### Record and Java Class
+JSON property work in Record, so we can send data by record
+
+#### WHEN to use Record OR Class (POJO)
+for data transfer object
+Java records : immutable, fixed set of value, no setter
+POJO: used many years, require more code
+WHEN without any additional logics in DTO, record is better
+If dto include logic, before Java 16, need mutable object (use POJO)
+
+requestMappingHandlerMapping, scan controller class and map between HTTP and method
+HTTP -> Dispatcher Servlet -> Hanlder Mapping -> Mapping Registry(the map) -> return found controller to Hanlder Mapping
+-> Controller -> Business Logic -> return to Controller -> return response to Dispatcher Servlet -> return response to users
+
+Mapping Registry store  in format (Method + Post +[Path variable(type)])
+eg GET-/somepath/{String}/{Integer}
+POST-/somepath/abc/1 //valid
+GET-/somepath/abc/1 //valid
+GET-/somepath/abcd/1 //invalid beucase already 1 controller method defined and duplicated for somepath
+
+#### @Entity , @Table
+Entity refer A java object that is meant to be persistent in a relational database using JPA
+Entity represetnt table in database, each instance = 1 row
+The Entity class must have no args constructor with public or protected
+Contain @Id, @Column, @Table to specify table name which by default is class name
+#### Repository (all interface)
+JpaRepository extends ListPagingAndSortingRepository, ListCrudRepository
+ListPagingAndSortingRepository extends PagingAndSortingRepository
+ListCrudRepository extends CrudRepository
+PagingAndSortingRepository extends Repository
+CrudRepository extends Repository
+
+#### @OneToOne
+attribute : mappedBy = "field in that class"
+@OneToOne(mappedBy="Student", cascade=CascadeType.ALL)
+private StudentProfile studentProfile // inside Student.java
+cascade => if delete Student, related studentProfile will be deleted too
 
 #### ShortCut
 Ctrl+Alt+O , clean unused import
