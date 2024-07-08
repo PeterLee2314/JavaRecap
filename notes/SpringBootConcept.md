@@ -514,9 +514,107 @@ CrudRepository extends Repository
 
 #### @OneToOne
 attribute : mappedBy = "field in that class"
-@OneToOne(mappedBy="Student", cascade=CascadeType.ALL)
+@OneToOne(mappedBy="student", cascade=CascadeType.ALL)
 private StudentProfile studentProfile // inside Student.java
 cascade => if delete Student, related studentProfile will be deleted too
+student is the primary entity, because of mappedBy
+for secondary entity, @OneToOne and @JoinColumn(name="student_id") // add extra field rather than new table
+
+
+#### Recursion in Entity Relationship 
+Recursion in @ManyToOne and @OneToMany
+eg fetch school object, contain list<Student> however inside List<Student> have school ... keep repeat
+solve by @JsonManagedReference in School.java (tell Spring School is in charge of seralizing the child, prevent child serializing the parent)
+@JsonBackReference in Student.java, tell student do not need to serialize(load) the parent
+
+#### 
+by ManyToOne, it will expose too many details in request and make the object more complex
+because the object have too many details and relationship with other entity
+
+#### DTO (Data Transfer Object) (return the response with just enough data from what client requested)
+Main purpose: encapsulate and structure data that needs to be transfer between different parts of a system or different systems entirely
+DTO only inclues simple data field or also called attributes and lacks the behaviour of the model or entity it represents
+eg Student store private information eg phone number, address, etc
+dont need to expose student, but want to expose school information
+WE Need a Mapper between Entities and Outside world, by using Mapper we can have many Representations (1,2,3)
+for example, representation 1 expose first name, last name, 2 expose or recieve outside world to create new student , etc
+Therefore, different representation can responsible for read , write (eg Wrapper)
+
+##### Why important?
+- Data Separation (seperate the internal model from what is exposed to API, changed Interal without changing External representation)
+- Abstraction (give clear structure, what api will provide to client)
+- Performance Improvement (send DTO rather than whole entity)
+- Flexibility (DTO separate from domain model, allow to tailor your API response to exactly what your client need)
+- Versioning (DTO make it easy to maintain different version, by using different set of DTO, support different version of DTO simultaneously)
+
+#### DTO can use Record when it is GET method
+For example StudentDTO, have relationship with School.java (ManyToOne relationship, One School Many Student)
+so if we want a Representation only return data that is ("firstname", "lastname", "email") , we also need to include the school id
+because later on, if we want other information, we can use school id to fetch more from other relationship Entity
+
+ALSO
+Controller shouldn't directly accept and return Entity but using DTO
+eg @ReponseBody Student student -> @ResponseBody StudentDto dto 
+WHY? then Client no need to include empty attribute, while server no need to return empty attribute but required data
+THEN during the controller we can either have service class OR method that convert DTO to Student class, so we can GET/POST/PUT/DELETE on the student class by the use of DTO
+WHY no need to add whole Object to Student Class? Because the relationship use foreign key (school_id) inside Student table, so that just ID, student can still fetch everything about his school
+```
+POST request that want to add new Student and add school ID inside Student class
+private Student toStudent(StudentDTO dto) {
+  var student = new Student();
+  student.setFirstName(dto.firstName());
+  ...
+  var school = new School();
+  school.setId(dto.schoolId());
+  student.setSchool(school);
+}
+```
+
+Originally server return JSON format include everything, OR client send JSON format inclue everything
+AFTER DTO, many null thing is hidden, so server stop exposed everything
+```
+BEFORE DTO
+{
+  "id":1,
+  "firstName": "Ali,
+  "lastName": "Bob",
+  "email": "bob@mail.com",
+  "age": 0,
+  "studentProfile" : null
+  
+}
+```
+eg School return all student information, so its bad , therefore with ResponseDto, only can create or fetch school name information
+
+#### DTO (StudentDto + StudentResponseDto aka StudentRepresentationDto)
+StudentDto, get only required data from Client, convert the Client JSON data to real Entity data, eg StudentDTO -> Student -> then save
+StudentResponse, only return required data from Server to Client , eg Student -> StudentResponse -> return limited data
+
+#### Service Layer (Rest API)
+Controller.java will increase its responsbility and size, therefore we need new layer to make code more reusable
+Which is service layer, so that Controller only take request and return , any detailed thing will be handled by Service class
+Presentation layer: Controller
+Data access Layer: Repository
+Intermediate layer between Controller and Repositroy => Service
+Service layer can be unit tested, because it decouple with controller and repository by mocking or stabbing the dependencies
+
+##### Mapper (Service Layer)
+StudentMapper , Responsible mapping from StudentDto -> Student type, its a type of XXXService.class
+StudentService, Responsible storing Detailed step inside,  StudentMapper(toStudent, toStudentResponseDto) , repository.save(xx) ,all will stored inside Student Service
+**Always make Controller only responsible for request and response
+
+#### Best way to organize file structure (4 Way)
+1. By feature (eg product,order,customer,payment)  (each contain controller,service, repo) : good for large team, easy to locate code
+2. By layer  (controller, service, repo, model, utils) (change a package would affect multiple packages)
+3. By domain (Domain Driven Design aka DDD) (eg A health care system have : patientManagement, biliing, scheduling, medicalRecords) focus on the busines domain packages
+packages are formed around different bounded context of subdomains
+4. By Component, (top level packages for high level component, within these packages can further organize by feature layer)
+eg (Usercomponent store controllers package and service package) (product component store controllers package, services package, etc)
+By feature is the best
+
+#### Data Validation in Rest API
+
+#### DAO (Data Access Object)
 
 #### ShortCut
 Ctrl+Alt+O , clean unused import
