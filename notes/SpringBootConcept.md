@@ -613,8 +613,386 @@ eg (Usercomponent store controllers package and service package) (product compon
 By feature is the best
 
 #### Data Validation in Rest API
+1. Data Integrity
+2. Preventing Attacks
+3. Error Prevention
+4. UX
+5. Performance
+6. Business Logic Compliance
 
+Add Validation on first entry point object that we use to interact with Rest API (eg On the Dto Level becaues it is @RequestBody)
+by @NotEmpty under every Dto variable
+add @Valid near the parameter of @RequestBody of that Dto
+eg @Valid @RequestBody StudentDto dto
+##### All error validation Annotation 
+@NotEmpty(message="please no empty")
+@Max
+@Min
+@Email
+@AssertFalse (that boolean var must be false)
+@Future (date,time should be in the future not past)
+@Negative
+@NegativeOrZero
+@NotBlank
+@NotNull
+@Null
+@Past
+@Pattern (follow regex)
+etc
+
+##### Handle Exception in Controller
+```
+@ExceptionHandler(XXXException.class)
+public ResponseEntity<?> handleMethodXXXException(XXXException exp) {
+    var error = new HashMap<String, String>();
+    exp.getBindingResult().getAllErrors().forEach(error ->  
+                            {
+                            var fieldName = ((FieldError)error).getField(); // get which field is error
+                            var errorMsg = error.getDefaultMessage(); // get its error message
+                            errors.put(fieldName,errorMsg);
+                          });
+    return new ResponseEntity<>(errors, HttpStatus.BAD_REQUSET);
+}
+```
+#### Test Spring
+Why?
+- Quality Assurance (work expected)
+- Regression Testing (add new features, ensure exists feature continue to work)
+- Documentation 
+- Code Maintainability (easy to maintain)
+- Refactoring Confidence (make changes, know if something breaks)
+- Collaboration
+- CI CD, keep push new code and delopy automatically, catch error automatically
+- Reduced Debugging time
+- Scability
+
+#### Spring Boot Test
+Spring provide provide Utilities & Annotation
+Two modules:
+- spring-boot-test contains core items
+- spring-boot-test-autoconfigure cotains auto-config
+Spring-boot-starter-tests imports:
+- Spring boot test modules
+- JUnit, AssertJ, Hamcrest, etc
+@SpringBootTest, if you want to load ApplicationContext on the test
+JUnit4 -> @RungWith(SpringRunner.class)
+JUnit5 -> no need add the equivalent @ExtendWith(SpringExtension)
+
+#### How to Test
+for Mapper Class, create a MapperTest class
+KEEP THE SAME PACKAGE NAMING, make it easy to find
+Ctrl+Shift+T (create new Test class of the current class)
+@BeforeAll, useful when init data in-memory db
+@BeforeEach
+@AfterEach
+Ctrl+Alt+L reformat data
+```
+//StudentMapperTest
+class StudentMapperTest{
+  @Test
+  public void test1() {
+  
+  }
+}
+```
+#### Test Isolation with Mockito
+if no real database, use Mockito to mock 
+useful to isolate and mock the service
+eg mock StudentRepository and StudentMapper to run StudentService, because StudentService rely on them
+similarly, StudentController need mock StudentService 
+@Mock  (from org.mockito)
+```
+class StudentServiceTest
+{
+  @InjectMocks (try to find mocks that is compatible to the student service)
+  private StudentService studentService;
+  
+  @Mock
+  private StudentRepository repository;
+  @Mock
+  private StudentMapper studentMapper;
+  
+  // When StudentService instance is created, it will try to find the mocks object that used for StudentService 
+  
+  @BeforeEach
+  void SetUp() {
+    MockitoAnnotations.openMocks(this); // open mock for current class 
+  }
+  
+  //first test
+  @Test
+  public void should_successfully_save_a_student() {
+    //Given
+    StudentDto  dto = new ... {John,Doe,xx@mail.com,1}
+    Student student = new xxx
+    //Mock the behaviour of repo and mapper, WHY? becuase studentService.saveStudent() used mapper.toStudent(dto) repo.save()
+    Mockito.when(studentMapper.toStudent(dto)).thenReturn(student); // THEREFORE, inside studentService.saveStudent(dto) that mapper to student will be replaced by Mockito
+    Mockito.when(repository.save(student)).thenReturn(student);
+    Mockito.when(studentMapper.toResponseDto(student)).thenReturn(new StudentResponseDto(lastname,firstname,...));
+    
+    //When
+    call saveStudent, expect StudentResponseDto
+    StudentResponseDto responseDto = studentService.saveStudent(dto);
+    //Then
+    assertEquals(dto.firstname(), responseDto.firstname());
+    
+    Mockito.verify(studentMapper, Mockito.times(1)).toStudent(dto); // should only executed 1 only, this prevent when toStudent(dto) execute twice
+  }
+}
+```
+when(studentMapper.toStudentResponseDto(any(Student.calss)).thenReturn
+any(Student.class)) // mean pass any Student class is acceptable, eg List<Student> student, any student object inside that list is OK
+findById() return Optional<Student> so thenReturn(Optional.of(student));
+
+### Chapter 2 (JPA, Hibernate)  TOLEARN in future(Kafak)
+#### Spring Data JPA, JPA , Hibernate
+Spring Data Jpa: abstraction layer on top of JPA to reduce boilerplate code required to implement DAO
+JPA: is just a specification that facilities ORM to manage relational data in Java applications
+JPA as Java interface where we have define the methods want to implement by any class, because so many implementation in the world, so to unity them
+
+Hibernate : JPA implementation, Hibernate generate SQL query and execute using JDBC
+
+#### @GeneratedValue(strategy)
+strategy type: 
+- Auto (by auto, it will check is the db compatible to Sequence? NO? Then next one Table? No? ....)
+- Sequence (just like a variable, store the value)
+- Table (a whole table to just store that column for id)
+- Identity
+
+Custom Sequence by generator() , we create a SequenceGenerator with same name with Annotation
+@GeneratedValue(
+strategy = GenerationType.SEQUENCE,
+generator = "author_sequence"
+)
+@SequenceGenerator(
+  name = "author_sequence"
+  sequenceName = "author_sequence",
+  allocationSize = 1 (by default 50 , so increment by 1)  
+) 
+
+Ctrl+Shift+N for open find document class
+#### CommandLineRunner good for running code at the start up
+
+#### Entity Lifecycle
+- By get(),load() -> directly enter Persistent without new Authour() object
+- after new Author() -> enter Transient state
+- after save(), persist(), saveOrUpdate() , update() -> enter Persistent state
+- after detach(), close(), clear(), evict() -> enter Detached
+- WHEN save(), saveOrUpdate(), merge(), lock() at Detached stage -> back to Persistent state
+- During Persistent state, delete() -> enter Removed state
+
+No affect on DB during Detached state, only when back to Persistent state
+
+#### ManyToMany MappedBy
+if we want Course to be main , we put MappedBy on Author.java
+```
+// inside Course.java
+    @ManyToMany
+    @JoinTable(
+            name = "authors_courses",
+            joinColumns = {
+                    @JoinColumn(name = "course_id")
+            },
+            inverseJoinColumns = {
+                    @JoinColumn(name = "author_id")
+            }
+    )
+```
+
+#### ManyToOne, need JoinColumn
+put MappedBy on who is One
+put JoinColumn on who is Many
+```
+    //section.java
+    @OneToMany(mappedBy = "section")
+    private List<Lecture> lectures;
+    
+    
+    //lecture.java
+    @ManyToOne
+    @JoinColumn(
+            name = "section_id"
+    )
+    private Section section;
+
+```
+
+#### OneToOne
+owner of relationship can be uni-directional eg Lecture can access the Resouce, but Resouce cant access Lecture
+```
+under Lecture.java
+    @OneToOne
+    @JoinColumn(
+            name = "resource_id"
+    )
+    private Resource resource;
+```
+
+To achieve bi-directional
+```
+//under resource.java
+    @OneToOne
+    @JoinColumn(
+            name = "lecture_id"
+    )
+    private Lecture lecture;
+    
+    //under Lecture.java
+    @OneToOne
+    @JoinColumn(
+            name = "resource_id"
+    )
+    private Resource resource;
+```
+
+#### Inheritance vs Composition
+Inheritance : pros :code reuse, cons: scability bad
+Composition : more flexible and easy to change
+Inheritance speaclized subclass base on base class, make the code more difficult to change (eg make change to base class)
+Composition: creating a class that has reference to one or more subject and delegate task to these subject
+(this allow combine functionality of multiple classes into a single class without the inheritance hierarchy of a base)
+So that when changing, just simply change the subject in the class
+
+#### BaseEntity (aka Abstract Entity) @MappedSuperclass
+@MappedSuperclass (this is a super class map to database table, so for define common property share by multiple entity, without create separable table for superclass)
+try to collect common field so reduce the duplicate field
+eg createdAt, lastModifiedAt, createdBy, lastModifiedBy
+When have any inheritance with BaseEntity and other Entity , change all @Builder to @SuperBuilder
+add @EqualsAndHashCode(callSuper = true) when using @Data on child Entity
+
+THEN the database with BaseEntity, will include column on their table
+so every table extends BaseEntity have all LocalTiemDate column
+
+#### Single Table Strategy (with parent and child class)
+map an inheritance hierachy to entities to a single Database table, this strategy is used JPA and hibernate mainly
+define how inheritance is implemented in the database, all sub-classes of the inheritance hierarchy are mapped to the same table
+
+##### Discriminator Column
+Used to distinguish between the different subclasses, contain a value indicate which sub-class a particular row in the table belongs to 
+##### Problem and when to use
+- lead to large table size
+- inefficient query
+Good when:
+- only few subclasses
+- The inheritance hierarchy is not so deep
+
+#### Different between @MappedSuperClass & @Inheritance
+@MappedSuperClass is just common field of all the table entity, that class will not show on DB
+@Inheritance, when SIngle Table Strategy, will make a large table contain all the row of sub-class
+and use Discriminator Column to identify which row belongs to which sub-classes
+```
+//Parent.java
+@Data
+@NoArgsConstructor
+@SuperBuilder
+@AllArgsConstructor
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "resource_type")
+public class Resource{
+    @Id
+    @GeneratedValue
+    private Integer id;
+
+    private String name;
+    private int size;
+    private String url;
+    @OneToOne
+    @JoinColumn(
+            name = "lecture_id"
+    )
+    private Lecture lecture;
+}
+
+// Video.java
+@EqualsAndHashCode(callSuper = true)
+@Data
+@NoArgsConstructor
+@SuperBuilder
+@AllArgsConstructor
+@Entity
+@DiscriminatorValue("V")
+public class Video extends Resource{
+    private int length;
+}
+
+```
+#### Join Table Strategy (with parent and child class)
+good for many class with many differences and optimize performance
+not suit for query the entire inheritance hierarchy at once
+the key will be the primary and the foreign key at the same time in child
+change the child id by @PrimaryKeyJoinColumn(name = "video_id")
+```
+// Resources.java (Parent)
+@Entity
+@Data
+@NoArgsConstructor
+@SuperBuilder
+@AllArgsConstructor
+@Inheritance(strategy = InheritanceType.JOINED)
+```
+
+#### Table per Class Strategy (with parent and child class)
+Good for few sub class with many differences
+each concrete sub-class in inheritance hierarchy is mapped to a separate table 
+abstract class is not mapped to table and inherit by sub-class
+
+#### Diff between Table per Class & Join Table
+Join Table : The main class table contains(name,size,url,etc) and sub-class table contain only sub-class element (eg length)
+Table per Class : main class field will copy inside sub-class table
+
+#### Polymorphic queries
+query database class will retrieve all sub-class (file,text,video)
+if dont want sub-class return, 
+eg exclude file.java by @Polymorphism(type = "PolymorphismType.EXPLICIT") (BUT DEPRECATED)
+
+#### Embedded entities (Composite Primary Key)
+composite primary key to define an entry in a table (use more than 1 column to identify the row : aka Composite Primary Key)
+Composite primary key useful when user have many records and buy at the same time so (user_name + order_date columns as primary key is good to solve)
+Embedded class is not a table but similar as SuperClass that be used for others (Other Entity with Embedded class, Child with Superclass)
+
+```
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Embeddable
+public class OrderId implements Serializable {
+        private String username;
+        private LocalDateTime orderDate;
+}
+
+
+public class Order {
+    @EmbeddedId
+    private OrderId id;
+}
+```
+
+#### Embeddable Entities (increase granularity of code)
+what if we want to add new Column call address inside many entity, how?
+- copy and paste on every entity that need? (NO)
+- create a superClass to extend it? (what if already extends BaseEntity?)
+- make Embeddable Entities
+```
+// Embeddable Entities
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Embeddable
+public class Address {
+    private String streetName;
+    private String houseNumber;
+    private String zipCode;
+}
+
+  
+    // under embedded ID Entity;
+    @Embedded
+    private Address address;
+    
+```
 #### DAO (Data Access Object)
+Use for Repository data fetch or behaviour
+
 
 #### ShortCut
 Ctrl+Alt+O , clean unused import
