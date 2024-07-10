@@ -999,6 +999,85 @@ StartsWith, EndsWith, In
 #### Optional (design pattern) to wrap something
 Optional<Author>
 
+#### @NamedQueries (put query in entity class, put method name in repo)
+good for maintain query definition
+1. Encapsulation of query login
+2. Reusability
+3. Optimize performance
+4. Centralized query definition
+5. Use cases
+   - Complex queries
+   - Improve readability
+   - Organzing and managing queries
+May not always be the best choice for some scenario
+- not as flexible as dynamic query
+```
+// Auhor.java
+@NamedQuery(
+  name= "Author.findByNamedQuery,
+  quey=  "select a from Author a where a.age >= :age"
+)
+@NamedQuery(
+        name = "Author.updateByNamedQuery",
+        query = "update Author a set a.age = :age"
+)
+
+// AuthorRepository
+// use the defined method name from Author.java (findByNamedQuery)
+List<Author> findByNamedQuery(@Param("age") int age);
+
+// for update
+@Modifying
+@Transactional
+void updateByNamedQuery(@Param("age") int age);
+
+```
+#### Specification (jpa feature)
+Dynamic and type safe query (can accept any type because of <T>, and <?> defined in not,or,and,all method inside Specification interface)
+build complex query which can be combined and reused
+Predecate toPredecate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder)
+```
+extends JpaSpecificationExecutor<T>
+public interface AuthorRepository extends JpaRepository<Author, Integer>, JpaSpecificationExecutor<Author> {
+
+// Specification.java is a interface which have 
+	@Nullable
+	Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder);
+
+
+// create package (speicification) class (AuthorSpecification)
+public static Specification<Author> hasAge(int age) {
+    return (Root<Author> root,
+            CriteriaQuery<?> query,
+            CriteriaBuilder criteriaBuilder
+    ) -> {
+        if(age < 0) {
+            return null;
+        }
+        return criteriaBuilder.equal(root.get("age"), age);
+    };
+}
+
+public static Specification<Author> firstnameLike(String firstname) {
+    return (Root<Author> root,
+            CriteriaQuery<?> query,
+            CriteriaBuilder criteriaBuilder
+    ) -> {
+        if(firstname == null) {
+            return null;
+        }
+        return criteriaBuilder.like(root.get("firstName"), "%" + firstname + "%");
+    };
+}
+
+// JpaApplication.java
+
+Specification<Author> spec = Specification
+        .where(AuthorSpecification.hasAge(36)).and(AuthorSpecification.firstnameLike("Peter"));
+repository.findAll(spec);
+```
+So these Specification can reuse
+
 #### DAO (Data Access Object)
 Use for Repository data fetch or behaviour
 
