@@ -990,6 +990,15 @@ public class Address {
     private Address address;
     
 ```
+
+#### Query generation from method name (aka derived query method)
+findByXXX, findByXXXANDXXX, findAllByXXX, countByXXX, deleteAllXXX
+allow And, Or, Not, Like, IgnoreCase 
+findAllByFirstNameContainingIgnoreCase 
+StartsWith, EndsWith, In
+#### Optional (design pattern) to wrap something
+Optional<Author>
+
 #### DAO (Data Access Object)
 Use for Repository data fetch or behaviour
 
